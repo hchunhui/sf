@@ -106,61 +106,103 @@ Inductive next_even (n:nat) : nat -> Prop :=
 
 Lemma le_trans : forall m n o, m <= n -> n <= o -> m <= o.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction 2.
+  apply H.
+  apply le_S. apply IHle.
+Qed.
 
 Theorem O_le_n : forall n,
   0 <= n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n.
+  apply le_n.
+  apply le_S. apply IHn.
+Qed.
 
 Theorem n_le_m__Sn_le_Sm : forall n m,
   n <= m -> S n <= S m.
 Proof. 
-  (* FILL IN HERE *) Admitted.
-
+  induction 1.
+  apply le_n.
+  apply le_S. apply IHle.
+Qed.
 
 Theorem Sn_le_Sm__n_le_m : forall n m,
   S n <= S m -> n <= m.
-Proof. 
-  (* FILL IN HERE *) Admitted.
-
+Proof.
+  intros n m. generalize dependent n.
+  induction m. 
+   inversion 1; subst.
+    apply le_n.
+    inversion H1.
+   inversion 1; subst.
+    apply le_n.
+    apply le_S. apply IHm. apply H1.
+Qed.
 
 Theorem le_plus_l : forall a b,
   a <= a + b.
 Proof. 
-  (* FILL IN HERE *) Admitted.
+  induction a.
+  apply O_le_n.
+  simpl. intros b. apply n_le_m__Sn_le_Sm. apply IHa.
+Qed.
 
 Theorem plus_lt : forall n1 n2 m,
   n1 + n2 < m ->
   n1 < m /\ n2 < m.
 Proof. 
  unfold lt. 
- (* FILL IN HERE *) Admitted.
+ intros n1 n2 m.
+ generalize dependent n2.
+ generalize dependent n1.
+ induction m.
+ inversion 1.
+ inversion 1; subst.
+ split; apply n_le_m__Sn_le_Sm. apply le_plus_l. rewrite plus_comm. apply le_plus_l.
+ destruct (IHm n1 n2 H1); split; apply le_S; auto.
+Qed.
 
 Theorem lt_S : forall n m,
   n < m ->
   n < S m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold lt.
+  intros; apply le_S; auto.
+Qed.
 
 Theorem ble_nat_true : forall n m,
   ble_nat n m = true -> n <= m.
 Proof. 
-  (* FILL IN HERE *) Admitted.
+  induction n.
+  intros; apply O_le_n.
+  induction m.
+  inversion 1.
+  simpl. intros; apply n_le_m__Sn_le_Sm; apply IHn; auto.
+Qed.
 
 Theorem le_ble_nat : forall n m,
   n <= m ->
   ble_nat n m = true.
 Proof.
   (* Hint: This may be easiest to prove by induction on [m]. *)
-  (* FILL IN HERE *) Admitted.
+  induction n.
+  reflexivity.
+  induction m.
+  inversion 1.
+  intros. apply IHn. apply Sn_le_Sm__n_le_m. auto.
+Qed.
 
 Theorem ble_nat_true_trans : forall n m o,
   ble_nat n m = true -> ble_nat m o = true -> ble_nat n o = true.                               
 Proof.
   (* Hint: This theorem can be easily proved without using [induction]. *)
-  (* FILL IN HERE *) Admitted.
-
+  intros.
+  apply le_ble_nat.
+  generalize (ble_nat_true m o H0).
+  generalize (ble_nat_true n m H).
+  apply le_trans.
+Qed.
 
 (** **** Exercise: 3 stars (R_provability) *)
 Module R.
