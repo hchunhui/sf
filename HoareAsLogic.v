@@ -52,15 +52,20 @@ Lemma H_Consequence_pre : forall (P Q P': Assertion) c,
     (forall st, P st -> P' st) ->
     hoare_proof P c Q.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* FILL IN HERE *)
+  intros.
+  eapply H_Consequence; eauto.  
+Qed.
 
 Lemma H_Consequence_post  : forall (P Q Q' : Assertion) c, 
     hoare_proof P c Q' ->
     (forall st, Q' st -> Q st) ->
     hoare_proof P c Q.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  (* FILL IN HERE *)
+  intros.
+  eapply H_Consequence; eauto.
+Qed.
 
 (** Now, for example, let's construct a proof object representing a
     derivation for the hoare triple
@@ -100,7 +105,15 @@ Print sample_proof.
 Theorem hoare_proof_sound : forall P c Q,
   hoare_proof P c Q -> {{P}} c {{Q}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* FILL IN HERE *)
+  induction 1.
+  apply hoare_skip.
+  apply hoare_asgn.
+  eapply hoare_seq; eauto.
+  eapply hoare_if; eauto.
+  eapply hoare_while; eauto.
+  eapply hoare_consequence; eauto.
+Qed.
 (** [] *)
 
 (** We can also use Coq's reasoning facilities to prove metatheorems
@@ -210,13 +223,17 @@ Definition wp (c:com) (Q:Assertion) : Assertion :=
 
 Lemma wp_is_precondition: forall c Q, 
   {{wp c Q}} c {{Q}}. 
-(* FILL IN HERE *) Admitted.
+(* FILL IN HERE *)
+  firstorder.
+Qed.
 
 (** **** Exercise: 1 star (wp_is_weakest) *)
 
 Lemma wp_is_weakest: forall c Q P', 
    {{P'}} c {{Q}} -> forall st, P' st -> wp c Q st. 
-(* FILL IN HERE *) Admitted.
+(* FILL IN HERE *)
+  firstorder.
+Qed.
 
 (** The following utility lemma will also be useful. *)
 
@@ -227,6 +244,8 @@ Proof.
     reflexivity.
 Qed.
 
+Hint Extern 1 => (match goal with
+                      [H:~bassn _ _ |- _ ] => apply bassn_eval_false in H end).
 (** **** Exercise: 4 stars (hoare_proof_complete) *)
 (** Complete the proof of the theorem. *)
 
@@ -251,7 +270,23 @@ Proof.
        intros st st' E1 H. unfold wp. intros st'' E2.  
          eapply HT. econstructor; eassumption. assumption.
      eapply IHc2. intros st st' E1 H. apply H; assumption.  
-  (* FILL IN HERE *) Admitted.
+  (* FILL IN HERE *)
+  Case "IFB".
+    unfold hoare_triple in HT.
+    eapply H_If.
+     eapply IHc1.
+      intros st st' Hc1 [HP Hb].
+      eapply HT; eauto; (apply E_IfTrue; eauto).
+     eapply IHc2.
+      intros st st' Hc2 [HP Hb]. eapply HT; eauto; apply E_IfFalse; eauto.
+  Case "WHILE".
+    eapply H_Consequence.
+     eapply H_While with (P:=wp (WHILE b DO c END) Q).
+      apply IHc. unfold hoare_triple, wp.
+      intros st st' Hc [Hw Hb] s' Hw'. apply Hw. eapply E_WhileLoop; eauto.
+     eapply wp_is_weakest; eauto.
+     intros st [H1 H2]. apply H1. apply E_WhileEnd; auto.
+Qed.
 
 (** Finally, we might hope that our axiomatic Hoare logic is _decidable_; 
     that is, that there is an (terminating) algorithm (a _decision procedure_)
